@@ -17,7 +17,9 @@ DEFINE CLASS Excell_Cell AS Custom
 			CASE lcFieldType = 'N'
 				RETURN LTRIM(STR(laFieldValue))
 			CASE lcFieldType = 'D'
-				&& RETURN LTRIM(STR(laFieldValue - DATE(1900,1,1)))
+				&& RETURN LTRIM(STR(laFieldValue - DATE(1989,12,31)))
+				&& RETURN LTRIM(STR(laFieldValue - DATE(1899,8,24)))
+				RETURN LTRIM(STR(laFieldValue - DATE(1899,12,30)))
 			CASE lcFieldType = 'T'
 			OTHERWISE
 				ERROR 'Undefined foxpro field type ' + lcFieldType
@@ -33,7 +35,7 @@ DEFINE CLASS Excell_Cell AS Custom
 		lnLength = 1
 		
 		DO WHILE .T.
-		
+		 
 			lnReminder = MOD(lnNumber , 26)
 			lnResult = FLOOR(lnNumber / 26)
 
@@ -93,15 +95,16 @@ DEFINE CLASS Excell_Cell AS Custom
 
 		DO CASE
 			CASE This.FoxproFieldType = 'C'
-				RETURN 'str'
+				RETURN 't="str"'
 			CASE This.FoxproFieldType = 'N'
-				RETURN 'n'
+				RETURN 't="n"'
 			CASE This.FoxproFieldType = 'D'
+				RETURN 's="1" t="n"'
 			CASE This.FoxproFieldType = 'T'
 			OTHERWISE
 				ERROR 'Undefined foxpro field type ' + This.FoxproFieldType
 		ENDCASE
-		RETURN 'str'	
+		RETURN 't="str"'
 	ENDFUNC
 	
 	FUNCTION ToString
@@ -111,7 +114,7 @@ DEFINE CLASS Excell_Cell AS Custom
 			+ This.GetColumnNameFromNumber() ;
 			+ This.RowNumber ;
 			+ '"'
-		lcType = 't="' + This.GetExcellFieldType() + '"'
+		lcType = This.GetExcellFieldType()
 		lcValue = This.GetFieldValueString()
 		
 		RETURN '<c ' + lcRange + ' ' + lcType + '><v>' + lcValue + '</v></c>'
