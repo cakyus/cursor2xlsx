@@ -129,16 +129,29 @@ DEFINE CLASS Excell_Writer AS Custom
 	ENDFUNC
 
 	FUNCTION GetRowFieldNames
-		LOCAL lcContent, lnFieldNumber
-		lcContent = This.GetXmlRowBegin()
+		LOCAL lcXML, lnFieldNumber
+		LOCAL loExcellCell
+		
+		loExcellCell = NEWOBJECT('Excell_Cell', 'class_excell_cell.prg')
+		
+		lcXML = This.GetXmlRowBegin()
+		
 		FOR lnFieldNumber = 1 TO This.FieldCount
+
 			lcFieldName = FIELD(lnFieldNumber)
-			lcCellNumber = This.GetColumnNameFromNumber(lnFieldNumber)
-			lcContent = lcContent + '<c r="' + lcCellNumber + This.RowNumber ;
-				+ '" t="str"><v>' + lcFieldName + '</v></c>'
+			lcFoxproFieldType = TYPE(lcFieldName)
+
+			loExcellCell.ColumnNumber = lnFieldNumber
+			loExcellCell.RowNumber = This.RowNumber
+			loExcellCell.FoxproFieldType = 'C'
+			loExcellCell.Value = lcFieldName
+			
+			lcXML = lcXML + loExcellCell.ToString()
 		ENDFOR
-		lcContent = lcContent + This.GetXmlRowEnd()
-		RETURN lcContent
+		
+		lcXML = lcXML + This.GetXmlRowEnd()
+		
+		RETURN lcXML
 	ENDFUNC
 
 	FUNCTION GetExcellFieldType
