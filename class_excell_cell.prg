@@ -6,20 +6,24 @@ DEFINE CLASS Excell_Cell AS Custom
 	FoxproFieldType = ''
 	Value = 0
 	
+	ZeroDateString = .F.
+	
 	FUNCTION GetFieldValueString
 
 		lcFieldType = This.FoxproFieldType
-		laFieldValue = This.Value
+		This.Value = This.Value
 		
 		DO CASE
 			CASE lcFieldType = 'C'
-				RETURN RTRIM(laFieldValue)
+				RETURN RTRIM(This.Value)
 			CASE lcFieldType = 'N'
-				RETURN LTRIM(STR(laFieldValue))
+				RETURN LTRIM(STR(This.Value))
 			CASE lcFieldType = 'D'
-				&& RETURN LTRIM(STR(laFieldValue - DATE(1989,12,31)))
-				&& RETURN LTRIM(STR(laFieldValue - DATE(1899,8,24)))
-				RETURN LTRIM(STR(laFieldValue - DATE(1899,12,30)))
+				IF This.ZeroDateString = .T. AND YEAR(This.Value) = 0 THEN
+					RETURN '  -  -'
+				ELSE
+					RETURN LTRIM(STR(This.Value - DATE(1899,12,30)))
+				ENDIF
 			CASE lcFieldType = 'T'
 			OTHERWISE
 				ERROR 'Undefined foxpro field type ' + lcFieldType
@@ -99,7 +103,11 @@ DEFINE CLASS Excell_Cell AS Custom
 			CASE This.FoxproFieldType = 'N'
 				RETURN 't="n"'
 			CASE This.FoxproFieldType = 'D'
-				RETURN 's="1" t="n"'
+				IF This.ZeroDateString = .T. AND YEAR(This.Value) = 0 THEN
+					RETURN 't="str"'
+				ELSE
+					RETURN 's="1" t="n"'
+				ENDIF
 			CASE This.FoxproFieldType = 'T'
 			OTHERWISE
 				ERROR 'Undefined foxpro field type ' + This.FoxproFieldType

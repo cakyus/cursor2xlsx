@@ -18,10 +18,21 @@ DEFINE CLASS Excell_Writer AS Custom
 	FieldCount = 0
 	CursorName = ''
 	
+	Headers = Null
+	
+	&& menggunakan "  -  -" untuk tanggal kosong
+	&& output yang sama dengan visual foxpro export to xls
+	&& opsi ini akan di teruskan ke Excell_Cell.ZeroDateString
+	ZeroDateString = .F.
+	
 	&& PROCEDURE Error
 		&& LPARAMETERS nError, cMethod, nLine
 		&& MESSAGEBOX cMethod
 	&& ENDPROC
+	
+	PROCEDURE Init
+		This.Headers = NEWOBJECT('Collection', 'class_collection.prg')
+	ENDPROC
 
 	FUNCTION SetCursor
 		LPARAMETERS lcCursorName
@@ -51,12 +62,12 @@ DEFINE CLASS Excell_Writer AS Custom
 		oFile.Open('Book1.zip')
 		oFile.Copy(This.FileOutputPath)
 		
-		This.ConvertOriginal()
+		This.CreateSheet1()
 		
 		&& nge zip
 		&& @todo return nya ZipOpen, ZipClose, ZipFileRelative harus .t. semua
 		SET LIBRARY TO LOCFILE('vfpcompression.fll')
-		ZipOpen(This.FileOutputPath, JUSTDRIVE(This.FileOutputPath) + '\', .T.) 
+		ZipOpen(This.FileOutputPath, JUSTPATH(This.FileOutputPath) + '\', .T.) 
 		ZipFileRelative(oFileSheet1.GetPath(), 'xl/worksheets/')
 		ZipClose() 
 		SET LIBRARY TO
@@ -65,12 +76,13 @@ DEFINE CLASS Excell_Writer AS Custom
 		
 	ENDFUNC
 	
-	FUNCTION ConvertOriginal
+	FUNCTION CreateSheet1
 		LOCAL lcCursorName, lnFieldNumber, lcCellNumber, lcXML, lcFieldName
 		LOCAL lcCellValue
 		LOCAL loExcellCell
 		
 		loExcellCell = NEWOBJECT('Excell_Cell', 'class_excell_cell.prg')
+		loExcellCell.ZeroDateString = This.ZeroDateString
 		
 		lcCursorName = This.CursorName
 
@@ -89,9 +101,6 @@ DEFINE CLASS Excell_Writer AS Custom
 			
 				lcFieldName = FIELD(lnFieldNumber)
 				lcFoxproFieldType = TYPE(lcFieldName)
-				&& lcExcellFieldType = This.GetExcellFieldType(lcFoxproFieldType)
-				&& lcCellNumber = This.GetColumnNameFromNumber(lnFieldNumber)
-				&& lcCellValue = This.GetFieldValueString(lcFoxproFieldType, &lcFieldName, lcFieldName)
 				
 				loExcellCell.ColumnNumber = lnFieldNumber
 				loExcellCell.RowNumber = This.RowNumber
@@ -100,10 +109,6 @@ DEFINE CLASS Excell_Writer AS Custom
 				
 				lcXML = lcXML + loExcellCell.ToString()
 				
-				&& lcXML = lcXML + '<c r="' + lcCellNumber + This.RowNumber ;
-					&& + '" t="' + lcExcellFieldType + '">' ;
-					&& + '<v>' + lcCellValue + '</v>' ;
-					&& + '</c>'
 			ENDFOR
 			lcXML = lcXML + This.GetXmlRowEnd()
 			This.FileWrite(lcXML)
@@ -117,21 +122,36 @@ DEFINE CLASS Excell_Writer AS Custom
 		LOCAL loExcellCell
 		
 		loExcellCell = NEWOBJECT('Excell_Cell', 'class_excell_cell.prg')
+		loExcellCell.ZeroDateString = This.ZeroDateString
 		
 		lcXML = This.GetXmlRowBegin()
 		
-		FOR lnFieldNumber = 1 TO This.FieldCount
+		IF This.Headers.Count = 0
+			FOR lnFieldNumber = 1 TO This.FieldCount
 
-			lcFieldName = FIELD(lnFieldNumber)
-			lcFoxproFieldType = TYPE(lcFieldName)
+				lcFieldName = FIELD(lnFieldNumber)
+				lcFoxproFieldType = TYPE(lcFieldName)
 
-			loExcellCell.ColumnNumber = lnFieldNumber
-			loExcellCell.RowNumber = This.RowNumber
-			loExcellCell.FoxproFieldType = 'C'
-			loExcellCell.Value = lcFieldName
-			
-			lcXML = lcXML + loExcellCell.ToString()
-		ENDFOR
+				loExcellCell.ColumnNumber = lnFieldNumber
+				loExcellCell.RowNumber = This.RowNumber
+				loExcellCell.FoxproFieldType = 'C'
+				loExcellCell.Value = lcFieldName
+				
+				lcXML = lcXML + loExcellCell.ToString()
+			ENDFOR
+		ELSE
+			FOR lnFieldNumber = 1 TO This.Headers.Count
+
+				lcFieldName = This.Headers.Item(lnFieldNumber)
+
+				loExcellCell.ColumnNumber = lnFieldNumber
+				loExcellCell.RowNumber = This.RowNumber
+				loExcellCell.FoxproFieldType = 'C'
+				loExcellCell.Value = lcFieldName
+				
+				lcXML = lcXML + loExcellCell.ToString()
+			ENDFOR
+		ENDIF
 		
 		lcXML = lcXML + This.GetXmlRowEnd()
 		

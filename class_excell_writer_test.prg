@@ -15,13 +15,34 @@ DO p_set.prg
 
 && d_spmind : table dengan berbagai field type
 		
+	&& USE E:\D_SPMIND.DBF IN 0
+
+	&& LOCAL oExcellWriter
+
+	&& oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
+	
+	&& oExcellWriter.ZeroDateString = .T.
+	&& oExcellWriter.SetCursor('D_SPMIND')
+	&& oExcellWriter.SetFileOutputPath('E:\Book1.xlsx')
+	&& oExcellWriter.Convert()
+
+&& d_spmind : table dengan berbagai field type
+		
 	USE E:\D_SPMIND.DBF IN 0
 
 	LOCAL oExcellWriter
 
 	oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
-
+	
+	&& dengan custom header
+	oExcellWriter.Headers.Add('thang')
+	oExcellWriter.Headers.Add('kdsatker')
+	oExcellWriter.Headers.Add('nospm')
+	
+	&& menggunakan "  -  -" untuk tanggal kosong
+	oExcellWriter.ZeroDateString = .T.
+	
 	oExcellWriter.SetCursor('D_SPMIND')
-	oExcellWriter.SetFileOutputPath('E:\Book1.xlsx')
+	oExcellWriter.SetFileOutputPath('E:\Temp\Book1.xlsx')
 	oExcellWriter.Convert()
 
