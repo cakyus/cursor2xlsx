@@ -12,6 +12,7 @@ DEFINE CLASS Excell_Writer AS Custom
 
 	TemplateFilePath = 'Book1.zip'
 	
+	
 	FileOutputPath = ''
 	FilePath = ''
 	RowNumber = ''
@@ -24,6 +25,9 @@ DEFINE CLASS Excell_Writer AS Custom
 	&& output yang sama dengan visual foxpro export to xls
 	&& opsi ini akan di teruskan ke Excell_Cell.ZeroDateString
 	ZeroDateString = .F.
+	
+	&& Baris pertama adalah Nama Field
+	ExportFieldNames = .T.
 	
 	&& PROCEDURE Error
 		&& LPARAMETERS nError, cMethod, nLine
@@ -77,9 +81,13 @@ DEFINE CLASS Excell_Writer AS Custom
 	ENDFUNC
 	
 	FUNCTION CreateSheet1
+	
 		LOCAL lcCursorName, lnFieldNumber, lcCellNumber, lcXML, lcFieldName
 		LOCAL lcCellValue
 		LOCAL loExcellCell
+		
+		&& Selisih Nomor Baris, berbeda sesuai dengan nilai ExportFieldNames 
+		LOCAL liRowNumberDelta
 		
 		loExcellCell = NEWOBJECT('Excell_Cell', 'class_excell_cell.prg')
 		loExcellCell.ZeroDateString = This.ZeroDateString
@@ -93,9 +101,15 @@ DEFINE CLASS Excell_Writer AS Custom
 		This.FileWrite(This.GetXmlTableBegin())
 
 		This.RowNumber = LTRIM(STR(RECNO()))
-		This.FileWrite(This.GetRowFieldNames())
+		IF This.ExportFieldNames = .T.
+			This.FileWrite(This.GetRowFieldNames())
+			liRowNumberDelta = 1
+		ELSE
+			liRowNumberDelta = 0
+		ENDIF
+		
 		DO WHILE NOT EOF()
-			This.RowNumber = LTRIM(STR(RECNO()+1))
+			This.RowNumber = LTRIM(STR(RECNO()+liRowNumberDelta))
 			lcXML = This.GetXmlRowBegin()
 			FOR lnFieldNumber = 1 TO This.FieldCount
 			
