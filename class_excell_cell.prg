@@ -15,16 +15,34 @@ DEFINE CLASS Excell_Cell AS Custom
 		
 		DO CASE
 			CASE lcFieldType = 'C'
-				RETURN This.HTMLEncode(This.Value)
-			CASE lcFieldType = 'N'
-				RETURN LTRIM(STR(This.Value))
-			CASE lcFieldType = 'D'
-				IF This.ZeroDateString = .T. AND YEAR(This.Value) = 0 THEN
-					RETURN '  -  -'
+				IF VARTYPE(This.Value) = 'X'
+					&& .NULL.
+					RETURN ''
 				ELSE
-					RETURN LTRIM(STR(This.Value - DATE(1899,12,30)))
+					RETURN This.HTMLEncode(This.Value)
 				ENDIF
-			CASE lcFieldType = 'T'
+			CASE lcFieldType = 'N'
+				IF VARTYPE(This.Value) = 'X'
+					&& .NULL.
+					RETURN '0'
+				ELSE
+					RETURN LTRIM(STR(This.Value))
+				ENDIF
+			CASE lcFieldType = 'D'
+				IF VARTYPE(This.Value) = 'X'
+					&& .NULL.
+					IF This.ZeroDateString = .T. THEN
+						RETURN '  -  -'
+					ELSE
+						RETURN LTRIM(STR(0))
+					ENDIF
+				ELSE
+					IF This.ZeroDateString = .T. AND YEAR(This.Value) = 0 THEN
+						RETURN '  -  -'
+					ELSE
+						RETURN LTRIM(STR(This.Value - DATE(1899,12,30)))
+					ENDIF
+				ENDIF
 			OTHERWISE
 				ERROR 'Undefined foxpro field type ' + lcFieldType
 		ENDCASE
