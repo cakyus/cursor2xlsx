@@ -34,15 +34,22 @@ DEFINE CLASS Excell_Cell AS Custom
 
 	&& @link https://en.wikipedia.org/wiki/Character_encodings_in_HTML
 	&& @notes Illegal characters
-	&&		HTML forbids the use of the characters with Universal Character Set/Unicode code points
-	&&			0 to 31, except 9, 10, and 13 (C0 control characters)
-	&&	    	127 (DEL character)
-	&&	    	128 to 159 (x80 – x9F, C1 control characters)
-	&&	    	55296 to 57343 (xD800 – xDFFF, the UTF-16 surrogate halves)
-	&& @notes A numeric character reference
-	&&  	A numeric character reference in HTML refers to 
-	&&  	a character by its Universal Character Set/Unicode code point, and uses the format
-	&&  	&#nnnn; or &#xhhhh; 
+	&&	   HTML forbids the use of the characters with Universal Character Set/Unicode code points
+	&&	       0 to 31, except 9, 10, and 13 (C0 control characters)
+	&&	       127 (DEL character)
+	&&	       128 to 159 (x80 – x9F, C1 control characters)
+	&&	       55296 to 57343 (xD800 – xDFFF, the UTF-16 surrogate halves)
+	&&     Numeric character reference
+	&&     A numeric character reference in HTML refers to 
+	&&     a character by its Universal Character Set/Unicode code point, and uses the format
+	&&     &#nnnn; or &#xhhhh; 
+	&& @notes XML character references
+	&&     &amp;  & (ampersand, U+0026)
+	&&     &lt;   < (less-than sign, U+003C)
+	&&     &gt;   > (greater-than sign, U+003E)
+	&&     &quot; " (quotation mark, U+0022)
+	&&     &apos; ' (apostrophe, U+0027)
+
 
 	FUNCTION HTMLEncode
 		LPARAMETERS sText
@@ -62,6 +69,16 @@ DEFINE CLASS Excell_Cell AS Custom
 					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
 				CASE iCharAsc > 55295 AND iCharAsc < 57344
 					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
+				CASE sChar = '&'
+					sChar = '&amp;'
+				CASE sChar = '<'
+					sChar = '&lt;'
+				CASE sChar = '>'
+					sChar = '&gt;'
+				CASE sChar = '"'
+					sChar = '&quote;'
+				CASE sChar = "'"
+					sChar = '&apos;'
 			ENDCASE
 			sTextResult = sTextResult + sChar
 		ENDFOR
