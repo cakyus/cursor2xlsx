@@ -51,16 +51,6 @@ DEFINE CLASS Excell_Cell AS Custom
 	ENDFUNC
 
 	&& @link https://en.wikipedia.org/wiki/Character_encodings_in_HTML
-	&& @notes Illegal characters
-	&&	   HTML forbids the use of the characters with Universal Character Set/Unicode code points
-	&&	       0 to 31, except 9, 10, and 13 (C0 control characters)
-	&&	       127 (DEL character)
-	&&	       128 to 159 (x80 – x9F, C1 control characters)
-	&&	       55296 to 57343 (xD800 – xDFFF, the UTF-16 surrogate halves)
-	&&     Numeric character reference
-	&&     A numeric character reference in HTML refers to 
-	&&     a character by its Universal Character Set/Unicode code point, and uses the format
-	&&     &#nnnn; or &#xhhhh; 
 	&& @notes XML character references
 	&&     &amp;  & (ampersand, U+0026)
 	&&     &lt;   < (less-than sign, U+003C)
@@ -79,14 +69,7 @@ DEFINE CLASS Excell_Cell AS Custom
 			sChar = SUBSTR(sText, i, 1)
 			iCharAsc = ASC(sChar)
 			DO CASE
-				CASE iCharAsc < 32 AND NOT INLIST(iCharAsc, 9, 10, 13)
-					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
-				CASE iCharAsc = 127
-					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
-				CASE iCharAsc > 127 AND iCharAsc < 160
-					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
-				CASE iCharAsc > 55295 AND iCharAsc < 57344
-					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'
+				&& HTML Special Characters
 				CASE sChar = '&'
 					sChar = '&amp;'
 				CASE sChar = '<'
@@ -94,9 +77,14 @@ DEFINE CLASS Excell_Cell AS Custom
 				CASE sChar = '>'
 					sChar = '&gt;'
 				CASE sChar = '"'
-					sChar = '&quote;'
+					sChar = '&quot;'
 				CASE sChar = "'"
 					sChar = '&apos;'
+				&& Space + Keyboard One-Stroke Characters
+				CASE iCharAsc > 31 AND iCharAsc < 127
+					&& Not Encoded
+				OTHERWISE
+					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'				
 			ENDCASE
 			sTextResult = sTextResult + sChar
 		ENDFOR
