@@ -1,2 +1,0 @@
-del *.fxp
-del *.bak
