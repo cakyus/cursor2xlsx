@@ -1,90 +1,127 @@
 SET DEFAULT TO JUSTPATH(SYS(16))
-SET SAFETY OFF
-CLEAR
+DO p_set.prg
+DO p_clear.prg
 
+SET PROCEDURE TO 'class_unit_test_case.prg' ADDITIVE
+
+&& -- MAIN --
 TRY
-	TestHTMLEncode()
-	TestNull()
-CATCH TO oErr
-	? [Error: ] + LTRIM(STR(oErr.ErrorNo)) ;
-		+ [ Line: ] + LTRIM(STR(oErr.LineNo)) ;
-		+ [ Procedure: ] + LTRIM(oErr.Procedure);
-		+ [ Message: ] + oErr.Message ;
-		+ [ UserValue: ] + oErr.UserValue
+	oExcelCell_TestCase = CREATEOBJECT('ExcelCell_TestCase')
+	oExcelCell_TestCase.start()
+CATCH TO oErr1
+	? [EXCEPTION]
+	?[  Error: ] + STR(oErr1.ErrorNo)
+	?[  LineNo: ] + STR(oErr1.LineNo) 
+	?[  Message: ] + oErr1.Message 
+	?[  Procedure: ] + oErr1.Procedure 
+	?[  Details: ] + oErr1.Details 
+	?[  StackLevel: ] + STR(oErr1.StackLevel) 
+	?[  LineContents: ] + oErr1.LineContents 
 ENDTRY
 
-FUNCTION TestHTMLEncode
-	
-	LOCAL oExcellCell
-	LOCAL sText
 
-	oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
-	
-	sText = oExcellCell.HTMLEncode(FILETOSTR('class_excell_cell_test_001.txt'))
-	STRTOFILE('<html><body>' + sText + '</body></html>', 'class_excell_cell_test_001_out.html.tmp')
-	? sText
-	IF sText == 'Denda 1 &#0137; untuk setiap hari keterlambatan dari nilai pekerjaan yang belum diselesaikan'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
-	
-	sText = oExcellCell.HTMLEncode('& < > "')
-	? sText
-	IF sText == '&amp; &lt; &gt; &quote;'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
-	
-	sText = oExcellCell.HTMLEncode("'")
-	? sText
-	IF sText == '&apos;'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
-ENDFUNC
+DEFINE CLASS ExcelCell_TestCase As UnitTestCase
 
-FUNCTION TestNull
+	FUNCTION Test_HTMLEncode_PerMillion
 	
-	LOCAL oExcellCell
-	LOCAL sText
-
-	oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		
+		TEXT TO sTextInput NOSHOW PRETEXT 2
+			Denda 1 ‰ untuk setiap hari keterlambatan dari nilai pekerjaan yang belum diselesaikan
+		ENDTEXT
+		
+		TEXT TO sTextOutput NOSHOW PRETEXT 2
+			Denda 1 &#0137; untuk setiap hari keterlambatan dari nilai pekerjaan yang belum diselesaikan
+		ENDTEXT
+		
+		sTextResult = oExcellCell.HTMLEncode(sTextInput)
+		THIS.assertEqual(sTextResult, sTextOutput)
+	ENDFUNC
 	
-	oExcellCell.Value = .NULL.
+	FUNCTION Test_HTMLEncode_XML_Character_References
 	
-	oExcellCell.FoxproFieldType = 'C'
-	sText = oExcellCell.GetFieldValueString()
-	IF sText == ''
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		
+		TEXT TO sTextInput NOSHOW PRETEXT 2
+			& < > " '
+		ENDTEXT
+		
+		TEXT TO sTextOutput NOSHOW PRETEXT 2
+			&amp; &lt; &gt; &quot; &apos;
+		ENDTEXT
+		
+		sTextResult = oExcellCell.HTMLEncode(sTextInput)
+		THIS.assertEqual(sTextResult, sTextOutput)
+	ENDFUNC
 	
-	oExcellCell.FoxproFieldType = 'N'
-	sText = oExcellCell.GetFieldValueString()
-	IF sText == '0'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
+	&& Single-stroke type-able keyboard characters
 	
-	oExcellCell.FoxproFieldType = 'D'
-	sText = oExcellCell.GetFieldValueString()
-	IF sText == '0'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
+	FUNCTION Test_HTMLEncode_Keyboard_Characters
 	
-	oExcellCell.FoxproFieldType = 'D'
-	oExcellCell.ZeroDateString = .T.
-	sText = oExcellCell.GetFieldValueString()
-	IF sText == '  -  -'
-		&& DO NOTHING
-	ELSE
-		THROW 'Fail'
-	ENDIF
-ENDFUNC
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		
+		TEXT TO sTextInput NOSHOW PRETEXT 2
+			1234567890  !@#$%^&*() abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ ~_+{}|:"<>? `-=[]\;',./
+		ENDTEXT
+		
+		TEXT TO sTextOutput NOSHOW PRETEXT 2
+			1234567890  !@#$%^&amp;*() abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ ~_+{}|:&quot;&lt;&gt;? `-=[]\;&apos;,./
+		ENDTEXT
+		
+		sTextResult = oExcellCell.HTMLEncode(sTextInput)
+		THIS.assertEqual(sTextResult, sTextOutput)
+	ENDFUNC	
+	
+	FUNCTION Test_HTMLEncode_AltCodes
+		LOCAL oExcellCell, sTextInput, sTextOutput 
+		LOCAL sCRC32 
+	
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		
+		sTextInput = FILETOSTR('alt-codes-utf-8.txt')
+		sTextResult = oExcellCell.HTMLEncode(sTextInput)
+		sTextResult = THIS.getCRC32(sTextResult)
+		sTextOutput = 'A3108302'
+		
+		THIS.assertEqual(sTextResult, sTextOutput)
+	ENDFUNC
+	
+	FUNCTION Test_Null_Character
+		LOCAL oExcellCell, cText
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		oExcellCell.Value = .NULL.
+		oExcellCell.FoxproFieldType = 'C'
+		cText = oExcellCell.GetFieldValueString()
+		THIS.assertEqual(cText, '')
+	ENDFUNC
+	
+	FUNCTION Test_Null_Numeric
+		LOCAL oExcellCell, cText
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		oExcellCell.Value = .NULL.
+		oExcellCell.FoxproFieldType = 'N'
+		cText = oExcellCell.GetFieldValueString()
+		THIS.assertEqual(cText, '0')
+	ENDFUNC
+	
+	FUNCTION Test_Null_Date
+	
+		LOCAL oExcellCell, cText
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		oExcellCell.Value = .NULL.
+		oExcellCell.FoxproFieldType = 'D'
+		cText = oExcellCell.GetFieldValueString()
+		THIS.assertEqual(cText, '0')
+	ENDFUNC
+	
+	FUNCTION Test_Null_Date_ZeroDateString
+	
+		LOCAL oExcellCell, cText
+		oExcellCell= NEWOBJECT('Excell_Cell','class_excell_cell.prg')
+		oExcellCell.Value = .NULL.		
+		oExcellCell.FoxproFieldType = 'D'
+		oExcellCell.ZeroDateString = .T.
+		cText = oExcellCell.GetFieldValueString()
+		THIS.assertEqual(cText, '  -  -')
+	ENDFUNC
+ENDDEF
