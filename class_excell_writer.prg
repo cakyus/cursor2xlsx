@@ -16,6 +16,7 @@ DEFINE CLASS Excell_Writer AS Custom
 	FileOutputPath = ''
 	FilePath = ''
 	RowNumber = ''
+	RowCount = 0
 	FieldCount = 0
 	CursorName = ''
 	
@@ -28,6 +29,9 @@ DEFINE CLASS Excell_Writer AS Custom
 	
 	&& Baris pertama adalah Nama Field
 	ExportFieldNames = .T.
+	
+	&& Menampilkan Progress WINDOW
+	ShowProgress = .F.
 	
 	&& PROCEDURE Error
 		&& LPARAMETERS nError, cMethod, nLine
@@ -95,6 +99,7 @@ DEFINE CLASS Excell_Writer AS Custom
 		lcCursorName = This.CursorName
 
 		SELECT &lcCursorName
+		This.RowCount = RECCOUNT()
 		This.FieldCount = FCOUNT()
 
 		This.FileCreate()
@@ -109,8 +114,15 @@ DEFINE CLASS Excell_Writer AS Custom
 		ENDIF
 		
 		DO WHILE NOT EOF()
+		
 			This.RowNumber = LTRIM(STR(RECNO()+liRowNumberDelta))
+
+			IF THIS.ShowProgress
+				WAIT WINDOW 'Processing '+LTRIM(STR(RECNO()))+' ('+LTRIM(STR(RECNO()*100/RECCOUNT()))+'%)' NOWAIT
+			ENDIF
+			
 			lcXML = This.GetXmlRowBegin()
+			
 			FOR lnFieldNumber = 1 TO This.FieldCount
 			
 				lcFieldName = FIELD(lnFieldNumber)
