@@ -26,26 +26,57 @@ QUIT
 
 DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 
-	FUNCTION Test_ShowProgress
+	FUNCTION Test_IllegalCharacter
 	
-		LOCAL oExcellWriter, sFileOutput
+		LOCAL oExcellWriter, cFileOutput
 		
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
-		CREATE CURSOR employee (Specialty CHR(254))
+		CREATE CURSOR EMPLOYEES ( Test_IllegalCharacter CHR(254))
 		
-		sFileOutput = "C:\Book1.xlsx"
+		&& FILE TEMPORER
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
 		
-		SELECT employee
+		SELECT EMPLOYEES
 		APPEND BLANK
-		GO TOP
 		mSpecialty = '&'
-		REPLACE Specialty WITH mSpecialty
+		REPLACE Test_IllegalCharacter WITH mSpecialty
+		GO TOP
 		
-		oExcellWriter.SetCursor('employee')
-		oExcellWriter.SetFileOutputPath('C:\Book1.xlsx')
+		oExcellWriter.SetCursor('EMPLOYEES')
+		oExcellWriter.SetFileOutputPath(cFileOutput)
 		oExcellWriter.Convert()
 		
-		RUN /N7 EXPLORER &sFileOutput
+		RUN /N7 EXPLORER &cFileOutput
 		
+	ENDFUNC
+	
+	FUNCTION Test_ShowProgress
+	
+		LOCAL oExcellWriter
+		LOCAL cFileOutput
+		
+		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')	
+		
+		&& APPEND DATA
+		CREATE CURSOR EMPLOYEES ( Test_ShowProgress CHAR(4) )
+		FOR I = 1 TO 400
+			APPEND BLANK
+			REPLACE Test_ShowProgress WITH TRIM(TRANSFORM(I))
+		ENDFOR	
+		GO TOP
+		
+		&& FILE TEMPORER
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
+		
+		&& CREATE XLSX
+		oExcellWriter.SetCursor('EMPLOYEES')
+		oExcellWriter.SetFileOutputPath(cFileOutput)
+		oExcellWriter.ShowProgress = .T.
+		oExcellWriter.Convert()
+		
+		&& RUN OUTPUT FILE
+		IF FILE(cFileOutput)
+			RUN /N7 EXPLORER &cFileOutput
+		ENDIF
 	ENDFUNC
 ENDDEFINE
