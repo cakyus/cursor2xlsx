@@ -31,7 +31,7 @@ DEFINE CLASS Excell_Cell AS Custom
 		ENDIF
 		IF This.ErrorXMLChars THEN
 			MESSAGEBOX(This.ErrorXMLCharsText;
-				+CHR(10)+CHR(13)+'ERROR-LOG: '+This.ErrorLogPath)
+				+CHR(10)+CHR(13)+'LOG: '+This.ErrorLogPath)
 		ENDIF
 	ENDFUNC
 	
