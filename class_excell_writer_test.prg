@@ -4,6 +4,12 @@ DO p_clear.prg
 
 SET PROCEDURE TO 'class_unit_test_case.prg' ADDITIVE
 
+ErrorLogPath = 'TEST.ERR'
+
+IF FILE(ErrorLogPath) THEN
+	DELETE FILE &ErrorLogPath
+ENDIF
+
 && <-- MAIN
 TRY
 	oExcelCell_TestCase = CREATEOBJECT('ExcelWrite_TestCase')
@@ -17,8 +23,12 @@ CATCH TO oErr1
 		CHR(10) + CHR(13) + [  Details: ] + oErr1.Details  + ;
 		CHR(10) + CHR(13) + [  StackLevel: ] + STR(oErr1.StackLevel)  + ;
 		CHR(10) + CHR(13) + [  LineContents: ] + oErr1.LineContents 
-	STRTOFILE(cError, 'TEST.ERR', 0)
+	STRTOFILE(cError, ErrorLogPath, 0)
 ENDTRY
+
+IF FILE(ErrorLogPath) THEN
+	RUN /N7 EXPLORER &ErrorLogPath
+ENDIF
 
 && QUIT
 
@@ -31,15 +41,14 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		LOCAL oExcellWriter, cFileOutput
 		
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
-		CREATE CURSOR EMPLOYEES ( Test_IllegalCharacter CHR(254))
+		CREATE CURSOR EMPLOYEES ( USER_NAME CHR(254))
 		
 		&& FILE TEMPORER
-		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '_' + 'Test_IllegalCharacter.XLSX'
 		
 		SELECT EMPLOYEES
 		APPEND BLANK
-		mSpecialty = '&'
-		REPLACE Test_IllegalCharacter WITH mSpecialty
+		REPLACE USER_NAME WITH '&'
 		GO TOP
 		
 		oExcellWriter.SetCursor('EMPLOYEES')
@@ -55,18 +64,43 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		LOCAL oExcellWriter, cFileOutput
 		
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
-		CREATE CURSOR EMPLOYEES ( Test_IllegalCharacter CHR(254))
+		CREATE CURSOR EMPLOYEES ( USER_NAME CHR(254))
 		
 		&& FILE TEMPORER
-		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '_' + 'Test_UnsupportedCharacter.XLSX'
 		
 		SELECT EMPLOYEES
 		APPEND BLANK
-		mSpecialty = CHR(2)
-		REPLACE Test_IllegalCharacter WITH mSpecialty
+		REPLACE USER_NAME WITH CHR(2)
 		APPEND BLANK
-		mSpecialty = CHR(2)
-		REPLACE Test_IllegalCharacter WITH mSpecialty
+		REPLACE USER_NAME WITH CHR(31)
+		APPEND BLANK
+		REPLACE USER_NAME WITH CHR(14)
+		GO TOP
+		
+		oExcellWriter.SetCursor('EMPLOYEES')
+		oExcellWriter.SetFileOutputPath(cFileOutput)
+		oExcellWriter.Convert()
+		
+		RUN /N7 EXPLORER &cFileOutput
+		
+	ENDFUNC
+	
+	FUNCTION Test_ExtendedAsciiCharacter
+	
+		LOCAL oExcellWriter, cFileOutput
+		
+		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
+		CREATE CURSOR EMPLOYEES ( USER_NAME CHR(254))
+		
+		&& FILE TEMPORER
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '_' + 'Test_ExtendedAsciiCharacter.XLSX'
+		
+		SELECT EMPLOYEES
+		APPEND BLANK
+		REPLACE USER_NAME WITH CHR(128)
+		APPEND BLANK
+		REPLACE USER_NAME WITH CHR(255)
 		GO TOP
 		
 		oExcellWriter.SetCursor('EMPLOYEES')
@@ -85,15 +119,15 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')	
 		
 		&& APPEND DATA
-		CREATE CURSOR EMPLOYEES ( Test_ShowProgress CHAR(4) )
+		CREATE CURSOR EMPLOYEES ( USER_NAME CHAR(4) )
 		FOR I = 1 TO 400
 			APPEND BLANK
-			REPLACE Test_ShowProgress WITH TRIM(TRANSFORM(I))
+			REPLACE USER_NAME WITH TRIM(TRANSFORM(I))
 		ENDFOR	
 		GO TOP
 		
 		&& FILE TEMPORER
-		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '_' + 'Test_ShowProgress.XLSX'
 		
 		&& CREATE XLSX
 		oExcellWriter.SetCursor('EMPLOYEES')

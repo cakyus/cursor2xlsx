@@ -8,12 +8,18 @@ DEFINE CLASS Excell_Cell AS Custom
 	
 	ZeroDateString = .F.
 	
+	&& Errors
+	
 	ErrorCount = 0
 	ErrorLogPath = ''
 	
 	ErrorXMLChars = .F.
 	ErrorXMLCharsText = 'Terdapat karakter yang tidak di-support format XML';
 		+CHR(10)+CHR(13)+'REF: http://www.w3.org/TR/REC-xml/#charsets'
+	
+	ErrorExtendedAscii = .F.
+	ErrorExtendedAsciiText = 'Terdapat karakter Extended ASCII';
+		+CHR(10)+CHR(13)+'REF: http://docs.oracle.com/cd/E25054_01/relnotes.1111/e17596/toc.htm#sthref5'
 	
 	PROCEDURE Init
 		This.ErrorLogPath = SYS(2023) + '\FOX' + SYS(3) + '.LOG'
@@ -22,7 +28,7 @@ DEFINE CLASS Excell_Cell AS Custom
 	FUNCTION ErrorLog
 		LPARAMETERS sText
 		This.ErrorCount = This.ErrorCount + 1
-		STRTOFILE(sText+CHR(13), This.ErrorLogPath, 1)
+		STRTOFILE(sText+CHR(13), This.ErrorLogPath, .T.)
 	ENDFUNC
 	
 	FUNCTION ErrorShow
@@ -31,6 +37,10 @@ DEFINE CLASS Excell_Cell AS Custom
 		ENDIF
 		IF This.ErrorXMLChars THEN
 			MESSAGEBOX(This.ErrorXMLCharsText;
+				+CHR(10)+CHR(13)+'LOG: '+This.ErrorLogPath)
+		ENDIF
+		IF This.ErrorExtendedAscii THEN
+			MESSAGEBOX(This.ErrorExtendedAsciiText;
 				+CHR(10)+CHR(13)+'LOG: '+This.ErrorLogPath)
 		ENDIF
 	ENDFUNC
@@ -77,6 +87,36 @@ DEFINE CLASS Excell_Cell AS Custom
 		RETURN ''	
 	ENDFUNC
 
+	&& @link http://www.w3.org/TR/REC-xml/#charsets
+	&& @notes character yang disupport oleh standard internasional:
+	&&        9, 10, 13, 32-55295, 57344-65533, dan 65536-1114111
+
+
+	FUNCTION IsXmlChars
+		LPARAMETERS iCharAsc
+		IF INLIST(iCharAsc, 9, 10, 13) ;
+			OR BETWEEN(iCharAsc, 32, 55295) ;
+			OR BETWEEN(iCharAsc, 57344, 65533) ;
+			OR BETWEEN(iCharAsc, 65536, 1114111) ;
+			THEN
+			RETURN .T.
+		ELSE
+			RETURN .F.
+		ENDIF		
+	ENDFUNC
+	
+	&& @link http://msdn.microsoft.com/en-us/library/9hxt0028%28v=vs.80%29.aspx
+	&& @notes ascii range 128-255
+	
+	FUNCTION IsExtendedAscii
+		LPARAMETERS iCharAsc
+		IF BETWEEN(iCharAsc, 128, 255) THEN
+			RETURN .T.
+		ELSE
+			RETURN .F.
+		ENDIF		
+	ENDFUNC
+	
 	&& @link https://en.wikipedia.org/wiki/Character_encodings_in_HTML
 	&& @notes XML character references
 	&&     &amp;  & (ampersand, U+0026)
@@ -85,11 +125,6 @@ DEFINE CLASS Excell_Cell AS Custom
 	&&     &quot; " (quotation mark, U+0022)
 	&&     &apos; ' (apostrophe, U+0027)
 	
-	&& @link http://www.w3.org/TR/REC-xml/#charsets
-	&& @notes character yang disupport oleh standard internasional:
-	&&        9, 10, 13, 32-55295, 57344-65533, dan 65536-1114111
-
-
 	FUNCTION HTMLEncode
 		LPARAMETERS sText
 		LOCAL i, j, sTextResult, sChar, iCharAsc
@@ -101,35 +136,36 @@ DEFINE CLASS Excell_Cell AS Custom
 			iCharAsc = ASC(sChar)
 			
 			&& XML Supported characters
-			IF INLIST(iCharAsc, 9, 10, 13) ;
-				OR BETWEEN(iCharAsc, 32, 55295) ;
-				OR BETWEEN(iCharAsc, 57344, 65533) ;
-				OR BETWEEN(iCharAsc, 65536, 1114111) ;
-				THEN
-				
-				DO CASE
-					&& HTML Special Characters
-					CASE sChar = '&'
-						sChar = '&amp;'
-					CASE sChar = '<'
-						sChar = '&lt;'
-					CASE sChar = '>'
-						sChar = '&gt;'
-					CASE sChar = '"'
-						sChar = '&quot;'
-					CASE sChar = "'"
-						sChar = '&apos;'
-					&& Space + Keyboard One-Stroke Characters
-					CASE iCharAsc > 31 AND iCharAsc < 127
-						&& Not Encoded
-					OTHERWISE
-						sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'				
-				ENDCASE
-			ELSE
+			IF This.IsXmlChars(iCharAsc) = .F. THEN
 				This.ErrorXMLChars = .T.
-				This.ErrorLog('Excell_Cell.HTMLEncode ' + LTRIM(STR(iCharAsc)) + ' ' + sChar)
-				sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'	
+				This.ErrorLog('Excell_Cell.HTMLEncode IsXmlChars ' + LTRIM(STR(iCharAsc)) + ' ' + sChar)
 			ENDIF
+			
+			&& Extended ASCII Characters
+			IF This.IsExtendedAscii(iCharAsc) = .T. THEN
+				This.ErrorExtendedAscii = .T.
+				This.ErrorLog('Excell_Cell.HTMLEncode IsExtendedAscii ' + LTRIM(STR(iCharAsc)) + ' ' + sChar)
+			ENDIF
+			
+			DO CASE
+				&& HTML Special Characters
+				CASE sChar = '&'
+					sChar = '&amp;'
+				CASE sChar = '<'
+					sChar = '&lt;'
+				CASE sChar = '>'
+					sChar = '&gt;'
+				CASE sChar = '"'
+					sChar = '&quot;'
+				CASE sChar = "'"
+					sChar = '&apos;'
+				&& Space + Keyboard One-Stroke Characters
+				CASE BETWEEN(iCharAsc, 32, 126)
+					&& Not Encoded. For what 0 to 127 looks like,
+					&& see http://msdn.microsoft.com/en-us/library/60ecse8t%28v=vs.80%29.aspx
+				OTHERWISE
+					sChar = '&#' + PADL(iCharAsc, 4, '0') + ';'				
+			ENDCASE
 			
 			sTextResult = sTextResult + sChar
 		ENDFOR
