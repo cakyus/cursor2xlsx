@@ -20,7 +20,7 @@ CATCH TO oErr1
 	STRTOFILE(cError, 'TEST.ERR', 0)
 ENDTRY
 
-QUIT
+&& QUIT
 
 && MAIN -->
 
@@ -39,6 +39,33 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		SELECT EMPLOYEES
 		APPEND BLANK
 		mSpecialty = '&'
+		REPLACE Test_IllegalCharacter WITH mSpecialty
+		GO TOP
+		
+		oExcellWriter.SetCursor('EMPLOYEES')
+		oExcellWriter.SetFileOutputPath(cFileOutput)
+		oExcellWriter.Convert()
+		
+		RUN /N7 EXPLORER &cFileOutput
+		
+	ENDFUNC
+	
+	FUNCTION Test_UnsupportedCharacter
+	
+		LOCAL oExcellWriter, cFileOutput
+		
+		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
+		CREATE CURSOR EMPLOYEES ( Test_IllegalCharacter CHR(254))
+		
+		&& FILE TEMPORER
+		cFileOutput = SYS(2023) + '\FOX' + SYS(3) + '.XLSX'
+		
+		SELECT EMPLOYEES
+		APPEND BLANK
+		mSpecialty = CHR(2)
+		REPLACE Test_IllegalCharacter WITH mSpecialty
+		APPEND BLANK
+		mSpecialty = CHR(2)
 		REPLACE Test_IllegalCharacter WITH mSpecialty
 		GO TOP
 		

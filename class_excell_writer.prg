@@ -141,6 +141,9 @@ DEFINE CLASS Excell_Writer AS Custom
 			SKIP
 		ENDDO
 		This.FileWrite(This.GetXmlTableEnd())
+		
+		loExcellCell.ErrorShow()
+		
 	ENDFUNC
 
 	FUNCTION GetRowFieldNames
