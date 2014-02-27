@@ -20,6 +20,12 @@ DEFINE CLASS Excell_Cell AS Custom
 	ErrorExtendedAscii = .F.
 	ErrorExtendedAsciiText = 'Terdapat karakter Extended ASCII';
 		+CHR(10)+CHR(13)+'REF: http://docs.oracle.com/cd/E25054_01/relnotes.1111/e17596/toc.htm#sthref5'
+		
+	&& Menampilkan Error kalo ada karakter di luar standard Xml
+	ShowErrorXmlChars = .T.
+	
+	&& Menampilkan Error kalo ada karakter Entended Ascii
+	ShowErrorExtendedAscii = .T.
 	
 	PROCEDURE Init
 		This.ErrorLogPath = SYS(2023) + '\FOX' + SYS(3) + '.LOG'
@@ -35,11 +41,11 @@ DEFINE CLASS Excell_Cell AS Custom
 		IF This.ErrorCount = 0 THEN
 			RETURN .F.
 		ENDIF
-		IF This.ErrorXMLChars THEN
+		IF This.ErrorXMLChars AND This.ShowErrorXmlChars THEN
 			MESSAGEBOX(This.ErrorXMLCharsText;
 				+CHR(10)+CHR(13)+'LOG: '+This.ErrorLogPath)
 		ENDIF
-		IF This.ErrorExtendedAscii THEN
+		IF This.ErrorExtendedAscii AND This.ShowErrorExtendedAscii THEN
 			MESSAGEBOX(This.ErrorExtendedAsciiText;
 				+CHR(10)+CHR(13)+'LOG: '+This.ErrorLogPath)
 		ENDIF

@@ -64,6 +64,8 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		LOCAL oExcellWriter, cFileOutput
 		
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
+		oExcellWriter.ShowErrorXmlChars = .T.
+		
 		CREATE CURSOR EMPLOYEES ( USER_NAME CHR(254))
 		
 		&& FILE TEMPORER
@@ -91,6 +93,8 @@ DEFINE CLASS ExcelWrite_TestCase As UnitTestCase
 		LOCAL oExcellWriter, cFileOutput
 		
 		oExcellWriter = NEWOBJECT('Excell_Writer','class_excell_writer.prg')
+		oExcellWriter.ShowErrorExtendedAscii = .F.
+		
 		CREATE CURSOR EMPLOYEES ( USER_NAME CHR(254))
 		
 		&& FILE TEMPORER

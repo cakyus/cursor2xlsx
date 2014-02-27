@@ -33,6 +33,12 @@ DEFINE CLASS Excell_Writer AS Custom
 	&& Menampilkan Progress WINDOW
 	ShowProgress = .F.
 	
+	&& Menampilkan Error kalo ada karakter di luar standard Xml
+	ShowErrorXmlChars = .T.
+	
+	&& Menampilkan Error kalo ada karakter Entended Ascii
+	ShowErrorExtendedAscii = .T.
+	
 	&& PROCEDURE Error
 		&& LPARAMETERS nError, cMethod, nLine
 		&& MESSAGEBOX cMethod
@@ -95,6 +101,8 @@ DEFINE CLASS Excell_Writer AS Custom
 		
 		loExcellCell = NEWOBJECT('Excell_Cell', 'class_excell_cell.prg')
 		loExcellCell.ZeroDateString = This.ZeroDateString
+		loExcellCell.ShowErrorXmlChars = This.ShowErrorXmlChars
+		loExcellCell.ShowErrorExtendedAscii = This.ShowErrorExtendedAscii
 		
 		lcCursorName = This.CursorName
 
